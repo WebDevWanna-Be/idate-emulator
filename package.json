@@ -1,0 +1,39 @@
+{
+  "name": "idate-emulator",
+  "version": "1.0.0",
+  "description": "iDatePH Revival Project - Server Emulator",
+  "main": "main.js",
+  "author": "Kijuwoo",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.idate.emulator",
+    "productName": "iDatePH Emulator",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "server/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      "server/ShopItem.ido"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true
+    }
+  }
+}

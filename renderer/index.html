@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iDatePH Revival Project</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-root">
+    <div class="top-bar">
+      <div class="top-tabs">
+        <button class="tab-btn active" data-view="log-view">Log</button>
+        <button class="tab-btn" data-view="settings-view">Settings</button>
+      </div>
+
+      <div class="top-right">
+        <button id="start-btn" class="start-btn state-start">START</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="log-view" class="view active">
+        <div class="log-panel">
+          <div id="log-output" class="log-output"></div>
+          <button id="save-log-btn" class="save-fab hidden">Save Log</button>
+        </div>
+      </div>
+
+    <div id="settings-view" class="view">
+      <div class="settings-panel">
+        <h2>Character Settings</h2>
+
+        <div class="settings-grid">
+          <div class="settings-row">
+            <label for="char-name">Character Name</label>
+            <input
+              type="text"
+              id="char-name"
+              maxlength="16"
+              placeholder="User"
+            />
+          </div>
+
+          <div class="settings-row">
+            <label for="gender">Gender</label>
+            <select id="gender">
+              <option value="1">1 – Male</option>
+              <option value="2" selected>2 – Female</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <label for="honey-name">Honey Name</label>
+            <input
+              type="text"
+              id="honey-name"
+              maxlength="16"
+              placeholder="(optional)"
+            />
+          </div>
+
+          <div class="settings-row">
+            <label for="event-id">Event</label>
+            <select id="event-id">
+              <option value="0">0 – None</option>
+              <option value="3">3 – Valentine</option>
+              <option value="4">4 – Halloween</option>
+              <option value="5" selected>5 – Christmas</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="settings-hint">
+          Settings apply to new sessions (re-log in the game after changing).
+        </p>
+      </div>
+    </div>
+
+
+  <script src="renderer.js"></script>
+</body>
+</html>
