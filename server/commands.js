@@ -2,6 +2,89 @@ const { itemDB } = require('./itemDatabase');
 const { OP } = require('./packets');
 const { writeWString } = require('./helpers');
 
+const fs = require('fs');
+const path = require('path');
+const CATEGORY_NAMES = {
+    0x0B: "Hair",
+    0x0C: "Face",
+    0x0D: "Jacket",
+    0x0E: "Gloves",
+    0x0F: "Pants",
+    0x10: "Shoes",
+    0x1F: "Bracelet",
+    0x20: "Bag",
+    0x21: "Glasses",
+    0x22: "Earring",
+    0x23: "Particle",
+    0x24: "Title",
+    0x25: "Pet",
+    0x26: "Nick Color",
+    0x27: "Chat Color",
+    0x28: "Set Item"
+};
+
+function cmdGetItems() {
+    return itemDB.items.map(i => ({
+        category: i.category,
+        categoryName: CATEGORY_NAMES[i.category] || `Cat ${i.category}`,
+        itemTypeId: i.itemTypeId,
+        variantId: i.variantId,
+        name: i.name
+    }));
+}
+
+
+
+function cmdSaveInventory(args, session) {
+    try {
+        const items = Array.from(session.inventory.values());
+
+        const savePath = path.join(__dirname, 'saved-inventory.json');
+
+        fs.writeFileSync(savePath, JSON.stringify(items, null, 2), 'utf8');
+
+        console.log(`[3XPLOIT -SAVEINV] Saved ${items.length} items to ${savePath}`);
+        return `Inventory saved (${items.length} items)`;
+
+    } catch (err) {
+        console.error('[3XPLOIT -SAVEINV] ERROR:', err);
+        return `Failed to save inventory: ${err.message}`;
+    }
+}
+
+function cmdLoadInventory(args, session) {
+    try {
+        const loadPath = path.join(__dirname, 'saved-inventory.json');
+
+        if (!fs.existsSync(loadPath)) {
+            return "No saved-inventory.json found.";
+        }
+
+        const data = JSON.parse(fs.readFileSync(loadPath, 'utf8'));
+
+        session.inventory.clear();
+        let nextUID = session.nextUniqueId;
+
+        data.forEach(item => {
+            item.uniqueId = nextUID++;
+            session.inventory.set(
+                (item.category << 16) | item.itemTypeId,
+                item
+            );
+        });
+
+        console.log(`[3XPLOIT -LOADINV] Loaded ${data.length} items from ${loadPath}`);
+        return `Loaded ${data.length} items.`;
+
+    } catch (err) {
+        console.error('[3XPLOIT -LOADINV] ERROR:', err);
+        return `Failed to load: ${err.message}`;
+    }
+}
+
+
+
+
 function isItemForGender(item, gender) {
     const itemGender = (item.itemTypeId % 2 === 0) ? 2 : 1;
     return itemGender === gender;
@@ -507,7 +590,14 @@ function executeCommand(message, session) {
         case '?':
             result = cmdHelp(args);
             break;
-        
+        case 'saveinv':
+        case 'saveinventory':
+            result = cmdSaveInventory(args, session);
+            break;
+        case 'loadinv':
+        case 'loadinventory':
+            result = cmdLoadInventory(args, session);
+            break;
         default:
             result = `Unknown command: \\${cmd} | Type \\help for commands`;
             break;
@@ -519,5 +609,8 @@ function executeCommand(message, session) {
 module.exports = {
     executeCommand,
     isItemForGender,
-    getCorrectVariantForGender
+    getCorrectVariantForGender,
+    cmdSaveInventory,
+    cmdLoadInventory,
+    cmdGetItems
 };
