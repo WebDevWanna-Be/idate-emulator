@@ -34,6 +34,7 @@ const { OP, EVENTS, EVENT_NAMES, buildCharacterInfoPacket, buildExpTable, buildR
 const { GameSession, Room } = require('./session');
 const readline = require('readline');
 const { executeCommand } = require('./commands');
+const { cmdSaveInventory } = require('./commands');
 
 const HOST = '127.0.0.1';
 const MAIN_PORT = 8132;
@@ -73,7 +74,16 @@ const mainServer = net.createServer(sock => {
   
   const session = new GameSession(sock, emuSettings);
   global.activeSession = session;
-  
+  //MODIFICATION TO LOAD AUTOMATICALLY
+  // Auto-load inventory
+try {
+    const { cmdLoadInventory } = require('./commands');
+    const result = cmdLoadInventory([], session);
+    console.log("[AUTOLOAD] " + result);
+} catch (e) {
+    console.log("[AUTOLOAD] Failed:", e.message);
+}
+  //END MODIFICATION
   sock.write(HANDSHAKE);
   logPkt('>', HANDSHAKE, 'HANDSHAKE', `[MAIN #${connId}] `);
   
@@ -357,6 +367,13 @@ const mainServer = net.createServer(sock => {
           resp.writeUInt16LE(0, 6);
           sock.write(resp);
           logPkt('>', resp, 'CHAR_EQUIP SUCCESS', `[MAIN #${connId}] `);
+          // AUTOSAVE EQUIP
+          try {
+         cmdSaveInventory([], session);
+         console.log("[AUTOSAVE] Inventory saved after CHAR_EQUIP");
+              } catch (e) {
+          console.log("[AUTOSAVE] Failed:", e.message);
+              }
           break;
         }
 
@@ -415,6 +432,14 @@ const mainServer = net.createServer(sock => {
           resp.writeUInt16LE(0, 6);
           sock.write(resp);
           logPkt('>', resp, 'ACCESSORY_EQUIP SUCCESS', `[MAIN #${connId}] `);
+          // Auto-save inventory after accessory equip
+try {
+    const { cmdSaveInventory } = require('./commands');
+    const result = cmdSaveInventory([], session);
+    console.log("[AUTOSAVE] " + result);
+} catch (e) {
+    console.log("[AUTOSAVE] Failed:", e.message);
+}
           break;
         }
         
@@ -1455,3 +1480,54 @@ module.exports = {
 if (require.main === module) {
   startServer();
 }
+// Control Port for external apps 
+const net = require('net');
+const { executeCommand, cmdSaveInventory, cmdLoadInventory, cmdGetItems } = require('./commands');
+
+
+// Control Port for external apps 
+const CONTROL_PORT = 8120;
+
+net.createServer(sock => {
+    console.log('[3XPLOIT] Connected:', sock.remoteAddress);
+
+    sock.on('data', data => {
+        const message = data.toString().trim();
+        const session = global.activeSession;
+
+        if (!session) {
+            sock.write('NO ACTIVE SESSION\n');
+            return;
+        }
+
+        // Handle special commands
+        // ➤ Handle request from EXTERNAL for item list
+        if (message === "getitemdb") {
+            console.log("[3XPLOIT] Sending item DB...");
+            sock.write(JSON.stringify(cmdGetItems()) + "\n");
+            return;
+        }
+         if (message === "getGender") {
+            console.log("[3XPLOIT] Sending session gender...");
+            sock.write(JSON.stringify(session.gender) + "\n");
+            return;
+        }
+
+        const result = executeCommand(message, session);
+
+        if (Array.isArray(result)) {
+            sock.write(JSON.stringify(result) + "\n");
+        } else {
+            sock.write(JSON.stringify({ result }) + "\n");
+        }
+    });
+
+    sock.on('close', () => {
+        console.log('[3XPLOIT] Client disconnected');
+    });
+
+}).listen(CONTROL_PORT, '127.0.0.1', () => {
+    console.log(`[3XPLOIT] Listening on 127.0.0.1:${CONTROL_PORT}`);
+});
+
+
