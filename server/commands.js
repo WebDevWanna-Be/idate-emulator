@@ -35,16 +35,29 @@ function cmdGetItems() {
 
 
 
+// Helper function to get the correct filename
+function getInventoryFilename(session) {
+    if (session && session.gender === 1) {
+        return 'MaleSettings.json';
+    }
+    // Default to Female for gender 2 or if undefined
+    return 'FemaleSettings.json';
+}
+
 function cmdSaveInventory(args, session) {
     try {
-        const items = Array.from(session.inventory.values());
+        if (!session) return "Error: No session found to save.";
 
-        const savePath = path.join(__dirname, 'saved-inventory.json');
+        const items = Array.from(session.inventory.values());
+        
+        // Determine filename based on gender
+        const filename = getInventoryFilename(session);
+        const savePath = path.join(__dirname, filename);
 
         fs.writeFileSync(savePath, JSON.stringify(items, null, 2), 'utf8');
 
-        console.log(`[3XPLOIT -SAVEINV] Saved ${items.length} items to ${savePath}`);
-        return `Inventory saved (${items.length} items)`;
+        console.log(`[3XPLOIT -SAVEINV] Saved ${items.length} items to ${filename}`);
+        return `Inventory saved to ${filename} (${items.length} items)`;
 
     } catch (err) {
         console.error('[3XPLOIT -SAVEINV] ERROR:', err);
@@ -54,10 +67,15 @@ function cmdSaveInventory(args, session) {
 
 function cmdLoadInventory(args, session) {
     try {
-        const loadPath = path.join(__dirname, 'saved-inventory.json');
+        if (!session) return "Error: No session found to load.";
+
+        // Determine filename based on gender
+        const filename = getInventoryFilename(session);
+        const loadPath = path.join(__dirname, filename);
 
         if (!fs.existsSync(loadPath)) {
-            return "No saved-inventory.json found.";
+            console.log(`[3XPLOIT -LOADINV] File not found: ${filename}`);
+            return `No ${filename} found.`;
         }
 
         const data = JSON.parse(fs.readFileSync(loadPath, 'utf8'));
@@ -73,16 +91,14 @@ function cmdLoadInventory(args, session) {
             );
         });
 
-        console.log(`[3XPLOIT -LOADINV] Loaded ${data.length} items from ${loadPath}`);
-        return `Loaded ${data.length} items.`;
+        console.log(`[3XPLOIT -LOADINV] Loaded ${data.length} items from ${filename}`);
+        return `Loaded ${data.length} items from ${filename}.`;
 
     } catch (err) {
         console.error('[3XPLOIT -LOADINV] ERROR:', err);
         return `Failed to load: ${err.message}`;
     }
 }
-
-
 
 
 function isItemForGender(item, gender) {
